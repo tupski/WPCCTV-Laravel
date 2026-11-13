@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+/* Provisional DESIGN.md tokens until Theme Generator output is verifiable. */
+@theme {
+    --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif;
+    --color-brand-navy: #102a43;
+    --color-brand-blue: #1d4ed8;
+    --color-brand-accent: #2ea3f2;
+    --color-brand-light: #d9e9fc;
+    --color-brand-background: #f8fafc;
+}
+
+:root {
+    color-scheme: light;
+    font-family: Montserrat, ui-sans-serif, system-ui, sans-serif;
+    color: #334155;
+    background: #f8fafc;
+}
+
+:focus-visible {
+    outline: 3px solid #2ea3f2;
+    outline-offset: 3px;
+}
