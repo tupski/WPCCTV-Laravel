@@ -22,7 +22,7 @@ class PublicContentTest extends TestCase
         $published = Product::factory()->published()->create(['name' => 'Published Cam']);
         $draft = Product::factory()->create(['name' => 'Draft Cam']);
 
-        $response = $this->get('/products');
+        $response = $this->get('/produk');
 
         $response->assertOk();
         $response->assertSee('Published Cam');
@@ -33,7 +33,7 @@ class PublicContentTest extends TestCase
     {
         $product = Product::factory()->published()->create(['name' => 'Test Product', 'slug' => 'test-product']);
 
-        $response = $this->get('/products/test-product');
+        $response = $this->get('/produk/test-product');
 
         $response->assertOk();
         $response->assertSee('Test Product');
@@ -43,7 +43,7 @@ class PublicContentTest extends TestCase
     {
         $product = Product::factory()->create(['name' => 'Draft Product', 'slug' => 'draft-product']);
 
-        $this->get('/products/draft-product')->assertNotFound();
+        $this->get('/produk/draft-product')->assertNotFound();
     }
 
     public function test_public_package_index_shows_only_published(): void
@@ -51,7 +51,7 @@ class PublicContentTest extends TestCase
         $published = Package::factory()->published()->create(['title' => 'Published Pkg']);
         $draft = Package::factory()->create(['title' => 'Draft Pkg']);
 
-        $response = $this->get('/packages');
+        $response = $this->get('/paket-cctv');
 
         $response->assertOk();
         $response->assertSee('Published Pkg');
@@ -63,7 +63,7 @@ class PublicContentTest extends TestCase
         $published = Service::factory()->published()->create(['title' => 'Instalation Service']);
         $draft = Service::factory()->create(['title' => 'Repair Service']);
 
-        $response = $this->get('/services');
+        $response = $this->get('/layanan');
 
         $response->assertOk();
         $response->assertSee('Instalation Service');
@@ -93,7 +93,7 @@ class PublicContentTest extends TestCase
     {
         $page = Page::factory()->published()->create(['title' => 'About Us', 'slug' => 'about-us']);
 
-        $response = $this->get('/pages/about-us');
+        $response = $this->get('/halaman/about-us');
 
         $response->assertOk();
         $response->assertSee('About Us');
@@ -103,7 +103,7 @@ class PublicContentTest extends TestCase
     {
         $page = Page::factory()->create(['title' => 'Secret Page', 'slug' => 'secret-page']);
 
-        $this->get('/pages/secret-page')->assertNotFound();
+        $this->get('/halaman/secret-page')->assertNotFound();
     }
 
     public function test_seo_metadata_resolver_returns_fallback_chain(): void

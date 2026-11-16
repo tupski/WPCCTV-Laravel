@@ -2,16 +2,20 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class FoundationTest extends TestCase
 {
-    public function test_public_foundation_page_renders_without_business_claims(): void
+    // The homepage now reads the database (packages, services, ...), so the
+    // schema must exist for these tests to run.
+    use RefreshDatabase;
+    public function test_public_homepage_renders_with_brand_identity(): void
     {
         $this->get('/')
             ->assertOk()
             ->assertSee('WP CCTV Indonesia')
-            ->assertSee('Informasi bisnis akan ditambahkan setelah materi terverifikasi.')
+            ->assertSee('Solusi CCTV untuk Keamanan Rumah dan Bisnis')
             ->assertSee('<meta property="og:type" content="website">', false);
     }
 

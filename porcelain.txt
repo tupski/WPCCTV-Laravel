@@ -1,0 +1,113 @@
+ M .env.example
+ M app/Models/User.php
+ M app/Providers/AppServiceProvider.php
+ M bootstrap/app.php
+ M composer.json
+ M composer.lock
+ M database/factories/UserFactory.php
+ M database/migrations/2026_01_01_000001_create_content_tables.php
+ M resources/js/app.js
+ M resources/views/admin/home.blade.php
+ M resources/views/layouts/admin.blade.php
+ M resources/views/layouts/document.blade.php
+ M routes/console.php
+ M routes/web.php
+ M tests/Feature/ModelRelationshipTest.php
+ M tests/TestCase.php
+?? PHASE_4_CLOSURE_AUDIT.md
+?? app/Console/Commands/AggregateAnalyticsCommand.php
+?? app/Console/Commands/GenerateVapidKeysCommand.php
+?? app/Http/Controllers/Admin/ActivityLogController.php
+?? app/Http/Controllers/Admin/ActivityLogViewController.php
+?? app/Http/Controllers/Admin/AnalyticsController.php
+?? app/Http/Controllers/Admin/AnalyticsViewController.php
+?? app/Http/Controllers/Admin/DashboardController.php
+?? app/Http/Controllers/Admin/LeadActivityController.php
+?? app/Http/Controllers/Admin/LeadController.php
+?? app/Http/Controllers/Admin/LeadViewController.php
+?? app/Http/Controllers/Admin/NotificationPreferencesController.php
+?? app/Http/Controllers/Admin/PushSettingsViewController.php
+?? app/Http/Controllers/Admin/PushSubscriptionController.php
+?? app/Http/Controllers/Admin/SettingController.php
+?? app/Http/Controllers/Admin/SettingsViewController.php
+?? app/Http/Controllers/Public/WhatsAppTrackingController.php
+?? app/Http/Middleware/
+?? app/Http/Requests/Admin/AssignLeadRequest.php
+?? app/Http/Requests/Admin/ConvertWhatsAppClickRequest.php
+?? app/Http/Requests/Admin/ScheduleLeadFollowUpRequest.php
+?? app/Http/Requests/Admin/StoreLeadActivityRequest.php
+?? app/Http/Requests/Admin/StoreLeadNoteRequest.php
+?? app/Http/Requests/Admin/StoreLeadRequest.php
+?? app/Http/Requests/Admin/StorePushSubscriptionRequest.php
+?? app/Http/Requests/Admin/UpdateLeadRequest.php
+?? app/Http/Requests/Admin/UpdateLeadStatusRequest.php
+?? app/Http/Requests/Admin/UpdateNotificationPreferencesRequest.php
+?? app/Http/Requests/Admin/UpdateSettingsRequest.php
+?? app/Jobs/
+?? app/Models/ActivityLog.php
+?? app/Models/AnalyticsDaily.php
+?? app/Models/AnalyticsPageView.php
+?? app/Models/Lead.php
+?? app/Models/LeadActivity.php
+?? app/Models/NotificationPreference.php
+?? app/Models/PushSubscription.php
+?? app/Models/Setting.php
+?? app/Models/WhatsAppClick.php
+?? app/Policies/
+?? app/Services/ActivityLogService.php
+?? app/Services/AnalyticsAggregationService.php
+?? app/Services/AnalyticsRecorderService.php
+?? app/Services/AnalyticsReportService.php
+?? app/Services/LeadConversionService.php
+?? app/Services/WhatsAppTrackingService.php
+?? app/Support/
+?? config/vapaid.php
+?? database/factories/ActivityLogFactory.php
+?? database/factories/AnalyticsDailyFactory.php
+?? database/factories/AnalyticsPageViewFactory.php
+?? database/factories/LeadActivityFactory.php
+?? database/factories/LeadFactory.php
+?? database/factories/NotificationPreferenceFactory.php
+?? database/factories/PushSubscriptionFactory.php
+?? database/factories/SettingFactory.php
+?? database/factories/WhatsAppClickFactory.php
+?? database/migrations/2026_01_01_000002_create_business_tables.php
+?? database/migrations/2026_01_01_000003_normalize_legacy_admin_role.php
+?? porcelain.txt
+?? public/sw.js
+?? resources/js/controllers/push_subscription_controller.js
+?? resources/views/admin/activity-logs/
+?? resources/views/admin/analytics/
+?? resources/views/admin/dashboard/
+?? resources/views/admin/leads/
+?? resources/views/admin/partials/
+?? resources/views/admin/push-settings/
+?? resources/views/admin/settings/
+?? tests/Feature/ActivityLogTest.php
+?? tests/Feature/AdminDashboardUiTest.php
+?? tests/Feature/AdminLeadUiTest.php
+?? tests/Feature/AdminSettingsUiTest.php
+?? tests/Feature/AnalyticsAggregationTest.php
+?? tests/Feature/AnalyticsApiTest.php
+?? tests/Feature/AnalyticsRecordingTest.php
+?? tests/Feature/AuthorizationMatrixTest.php
+?? tests/Feature/EntityUrlTest.php
+?? tests/Feature/JobRetryPolicyTest.php
+?? tests/Feature/LeadManagementTest.php
+?? tests/Feature/LeadReassignmentPolicyTest.php
+?? tests/Feature/LegacyAdminRoleMigrationTest.php
+?? tests/Feature/NotificationJobTest.php
+?? tests/Feature/NotificationPreferencesTest.php
+?? tests/Feature/PushDeliveryWithoutPreferencesTest.php
+?? tests/Feature/PushSubscriptionTest.php
+?? tests/Feature/ReferrerTruncationTest.php
+?? tests/Feature/RetentionJobTest.php
+?? tests/Feature/SettingsTest.php
+?? tests/Feature/VapidKeyGenerationTest.php
+?? tests/Feature/VisitorTokenCollisionTest.php
+?? tests/Feature/VisitorTokenCookieTest.php
+?? tests/Feature/WhatsAppRateLimiterTest.php
+?? tests/Feature/WhatsAppTrackingTest.php
+?? tests/Unit/FormatTest.php
+?? tests/Unit/NonFiniteRatioTest.php
+?? tests/Unit/RedactionKeyRuleTest.php

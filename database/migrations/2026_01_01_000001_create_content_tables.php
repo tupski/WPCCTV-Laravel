@@ -6,6 +6,38 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /*
+     * Explicit index/constraint names — why this migration names some indexes.
+     *
+     * MySQL and MariaDB cap identifiers at 64 characters; SQLite does not. So
+     * Laravel's conventional auto-generated names (`{table}_{columns}_{type}`)
+     * pass the SQLite-backed test suite and then abort `migrate` on the target
+     * engine. Measured against the MySQL grammar, and reproduced for real on
+     * MariaDB 12.2.2:
+     *
+     *   package_usage_category_package_package_usage_category_id_package_id_unique  → 74  FAILS
+     *   package_usage_category_package_package_usage_category_id_foreign            → 64  exactly at the limit
+     *   package_category_package_package_category_id_package_id_unique              → 62
+     *   package_category_package_package_category_id_foreign                        → 52
+     *
+     * The 74-character name is not a warning, it is a hard stop:
+     *   SQLSTATE[42000] 1059 Identifier name '...' is too long
+     * which aborts the whole migration on MariaDB/MySQL while SQLite accepts it
+     * silently — the failure mode is invisible to a green SQLite suite.
+     *
+     * The two pivot tables whose columns push the generated names to 62-74
+     * characters therefore carry explicit names of the form
+     * `{short_table}_{short_columns}_{type}`. They stay readable (unlike
+     * `idx_1`) and sit far inside the limit. A name is only shortened when it
+     * would otherwise breach or graze 64; every other index in this file keeps
+     * its conventional name, so the fix is minimal and reviewable.
+     *
+     * `packages` is named explicitly for a different reason: its generated
+     * `packages_brand_id_published_index` measured 33 and was never at risk,
+     * but pinning the name documents the intent of the composite and survives
+     * a future column rename.
+     */
+
     /**
      * Run the migrations.
      *
@@ -145,8 +177,8 @@ return new class extends Migration
             $table->boolean('published')->default(false);
             $table->timestamps();
 
-            $table->index(['brand_id', 'published']);
-            $table->index('title');
+            $table->index(['brand_id', 'published'], 'packages_brand_published_idx');
+            $table->index('title', 'packages_title_idx');
         });
 
         // ── package_category pivot ────────────────────────────────────
@@ -154,15 +186,23 @@ return new class extends Migration
             $table->id();
             $table->foreignId('package_category_id')->constrained('package_categories')->cascadeOnDelete();
             $table->foreignId('package_id')->constrained('packages')->cascadeOnDelete();
-            $table->unique(['package_category_id', 'package_id']);
+            $table->unique(['package_category_id', 'package_id'], 'pc_pkg_category_id_package_id_unique');
         });
 
         // ── package_usage_category pivot ──────────────────────────────
+        // Explicit names on every index + FK: see the class docblock. The
+        // auto-generated unique name was 74 chars and aborted migrate on
+        // MariaDB; the auto-generated FK name was exactly 64 — one character
+        // of headroom, which is not headroom.
         Schema::create('package_usage_category_package', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('package_usage_category_id')->constrained('package_usage_categories')->cascadeOnDelete();
-            $table->foreignId('package_id')->constrained('packages')->cascadeOnDelete();
-            $table->unique(['package_usage_category_id', 'package_id']);
+            $table->foreignId('package_usage_category_id')
+                ->constrained('package_usage_categories', null, 'fk_puc_pkg_usage_category')
+                ->cascadeOnDelete();
+            $table->foreignId('package_id')
+                ->constrained('packages', null, 'fk_puc_pkg_package')
+                ->cascadeOnDelete();
+            $table->unique(['package_usage_category_id', 'package_id'], 'puc_pkg_usage_category_id_package_id_unique');
         });
 
         // ── services ──────────────────────────────────────────────────

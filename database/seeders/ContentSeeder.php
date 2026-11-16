@@ -2,19 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\BlogArticle;
-use App\Models\BlogCategory;
-use App\Models\BlogTag;
-use App\Models\Faq;
-use App\Models\Page;
-use App\Models\PackageBrand;
-use App\Models\PackageCategory;
-use App\Models\PackageUsageCategory;
-use App\Models\ProductBrand;
-use App\Models\Service;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * Phase 3 seeder — superseded by the Phase 5 seeders but retained because
+ * existing test suites seed through it. It only creates draft placeholders;
+ * the published demo content lives in ProductSeeder, PackageSeeder,
+ * ServiceSeeder, BlogSeeder and PageSeeder.
+ */
 class ContentSeeder extends Seeder
 {
     /**
@@ -41,7 +36,7 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($brands as $brand) {
-            ProductBrand::firstOrCreate(
+            \App\Models\ProductBrand::firstOrCreate(
                 ['name' => $brand],
                 ['slug' => \Illuminate\Support\Str::slug($brand)]
             );
@@ -56,7 +51,7 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($brands as $brand) {
-            PackageBrand::firstOrCreate(
+            \App\Models\PackageBrand::firstOrCreate(
                 ['name' => $brand],
                 ['slug' => \Illuminate\Support\Str::slug($brand)]
             );
@@ -87,7 +82,7 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($services as $service) {
-            Service::firstOrCreate(
+            \App\Models\Service::firstOrCreate(
                 ['type' => $service['type']],
                 $service + ['slug' => \Illuminate\Support\Str::slug($service['title'])]
             );
@@ -103,7 +98,7 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            PackageCategory::firstOrCreate($category);
+            \App\Models\PackageCategory::firstOrCreate($category);
         }
     }
 
@@ -118,17 +113,17 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            PackageUsageCategory::firstOrCreate($category);
+            \App\Models\PackageUsageCategory::firstOrCreate($category);
         }
     }
 
     protected function seedBlogContent(): void
     {
-        if (BlogCategory::count() > 0) {
+        if (\App\Models\BlogCategory::count() > 0) {
             return;
         }
 
-        $user = User::first();
+        $user = \App\Models\User::first();
         if (!$user) {
             return;
         }
@@ -140,7 +135,7 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            BlogCategory::create($category);
+            \App\Models\BlogCategory::create($category);
         }
 
         $tags = [
@@ -150,13 +145,13 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($tags as $tag) {
-            BlogTag::create($tag);
+            \App\Models\BlogTag::create($tag);
         }
 
         // Draft article — no published content without approval
-        $article = BlogArticle::factory()->draft()->create([
+        $article = \App\Models\BlogArticle::factory()->draft()->create([
             'user_id' => $user->id,
-            'blog_category_id' => BlogCategory::where('slug', 'tips-keamanan')->first()?->id,
+            'blog_category_id' => \App\Models\BlogCategory::where('slug', 'tips-keamanan')->first()?->id,
             'title' => 'Panduan Memilih Kamera CCTV untuk Rumah',
             'slug' => 'panduan-memilih-kamera-cctv-untuk-rumah',
             'excerpt' => 'Tips memilih kamera CCTV yang sesuai untuk kebutuhan rumah.',
@@ -164,13 +159,13 @@ class ContentSeeder extends Seeder
         ]);
 
         $article->tags()->sync(
-            BlogTag::where('slug', 'cctv')->first()?->id ? [BlogTag::where('slug', 'cctv')->first()->id] : []
+            \App\Models\BlogTag::where('slug', 'cctv')->first()?->id ? [\App\Models\BlogTag::where('slug', 'cctv')->first()->id] : []
         );
     }
 
     protected function seedFaqContent(): void
     {
-        if (Faq::count() > 0) {
+        if (\App\Models\Faq::count() > 0) {
             return;
         }
 
@@ -181,13 +176,13 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($faqs as $faq) {
-            Faq::create($faq);
+            \App\Models\Faq::create($faq);
         }
     }
 
     protected function seedPages(): void
     {
-        if (Page::count() > 0) {
+        if (\App\Models\Page::count() > 0) {
             return;
         }
 
@@ -207,7 +202,7 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($pages as $page) {
-            Page::create($page);
+            \App\Models\Page::create($page);
         }
     }
 }

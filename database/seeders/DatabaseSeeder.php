@@ -11,9 +11,22 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Every seeder is idempotent and safe to run repeatedly: entities are
+     * matched by their unique key (slug, type, question, email, settings key)
+     * via firstOrCreate/updateOrCreate, so `db:seed` twice and
+     * `migrate:fresh --seed` both succeed.
      */
     public function run(): void
     {
-        $this->call(ContentSeeder::class);
+        $this->call([
+            SettingSeeder::class,
+            UserSeeder::class,
+            ProductSeeder::class,
+            PackageSeeder::class,
+            ServiceSeeder::class,
+            BlogSeeder::class,
+            PageSeeder::class,
+        ]);
     }
 }

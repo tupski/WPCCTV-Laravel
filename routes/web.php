@@ -1,28 +1,62 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\ActivityLogViewController;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\AnalyticsViewController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\BlogTagController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\LeadActivityController;
+use App\Http\Controllers\Admin\LeadController;
 use App\Http\Controllers\Admin\MediaAssetController;
-use App\Http\Controllers\Admin\PageController;
-use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\NotificationPreferencesController;
 use App\Http\Controllers\Admin\PackageCategoryController;
+use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PackageUsageCategoryController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LeadViewController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\PushSettingsViewController;
+use App\Http\Controllers\Admin\PushSubscriptionController;
 use App\Http\Controllers\Admin\SeoMetadataController;
 use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SettingsViewController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Public\BlogController as PublicBlogController;
+use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\FaqController as PublicFaqController;
-use App\Http\Controllers\Public\PageController as PublicPageController;
+use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\PackageController as PublicPackageController;
+use App\Http\Controllers\Public\PageController as PublicPageController;
 use App\Http\Controllers\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Public\ServiceController as PublicServiceController;
+use App\Http\Controllers\Public\SitemapController;
+use App\Http\Controllers\Public\WhatsAppTrackingController;
+use App\Http\Middleware\RecordPageView;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'public.home')->name('home');
+// ── Public website ─────────────────────────────────────────────────
+// Server-rendered Blade, Turbo navigation, RecordPageView on every public
+// content GET so analytics see the whole public surface and nothing else.
+
+// RecordPageView is applied to the home route individually as well as the
+// content group below: analytics must see the homepage render.
+Route::get('/', [HomeController::class, 'index'])
+    ->middleware(RecordPageView::class)
+    ->name('home');
+
+Route::get('/kontak', [ContactController::class, 'show'])->name('contact.show');
+Route::post('/kontak', [ContactController::class, 'store'])
+    ->middleware('throttle:public-lead')
+    ->name('contact.store');
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -30,33 +64,44 @@ Route::middleware('guest')->group(function (): void {
 });
 
 // ── Public content routes ──────────────────────────────────────────
-Route::prefix('products')->name('products.')->group(function (): void {
-    Route::get('/', [PublicProductController::class, 'index'])->name('index');
-    Route::get('/{slug}', [PublicProductController::class, 'show'])->where('slug', '[0-9a-z-]+');
+// `RecordPageView` is applied here only: analytics records public renders,
+// never admin/auth/tracking endpoints (also re-checked inside the middleware).
+Route::middleware(RecordPageView::class)->group(function (): void {
+    Route::prefix('produk')->name('products.')->group(function (): void {
+        Route::get('/', [PublicProductController::class, 'index'])->name('index');
+        Route::get('/{slug}', [PublicProductController::class, 'show'])->name('show')->where('slug', '[0-9a-z-]+');
+    });
+
+    Route::prefix('paket-cctv')->name('packages.')->group(function (): void {
+        Route::get('/', [PublicPackageController::class, 'index'])->name('index');
+        Route::get('/{slug}', [PublicPackageController::class, 'show'])->name('show')->where('slug', '[0-9a-z-]+');
+    });
+
+    Route::prefix('layanan')->name('services.')->group(function (): void {
+        Route::get('/', [PublicServiceController::class, 'index'])->name('index');
+        Route::get('/{slug}', [PublicServiceController::class, 'show'])->name('show')->where('slug', '[0-9a-z-]+');
+    });
+
+    Route::prefix('blog')->name('blog.')->group(function (): void {
+        Route::get('/', [PublicBlogController::class, 'index'])->name('index');
+        Route::get('/{slug}', [PublicBlogController::class, 'show'])->name('show')->where('slug', '[0-9a-z-]+');
+    });
+
+    Route::prefix('faq')->name('faqs.')->group(function (): void {
+        Route::get('/', [PublicFaqController::class, 'index'])->name('index');
+    });
+
+    Route::prefix('halaman')->name('pages.')->group(function (): void {
+        Route::get('/{slug}', [PublicPageController::class, 'show'])->name('show')->where('slug', '[0-9a-z-]+');
+    });
 });
 
-Route::prefix('packages')->name('packages.')->group(function (): void {
-    Route::get('/', [PublicPackageController::class, 'index'])->name('index');
-    Route::get('/{slug}', [PublicPackageController::class, 'show'])->where('slug', '[0-9a-z-]+');
-});
+// ── WhatsApp first-party tracking endpoint ───────────────────────
+// GET request, CSRF-exempt by default. Rate limited per visitor+context.
+Route::get('track/whatsapp', [WhatsAppTrackingController::class, 'track'])
+    ->middleware('throttle:whatsapp-tracking')
+    ->name('whatsapp.track');
 
-Route::prefix('services')->name('services.')->group(function (): void {
-    Route::get('/', [PublicServiceController::class, 'index'])->name('index');
-    Route::get('/{slug}', [PublicServiceController::class, 'show'])->where('slug', '[0-9a-z-]+');
-});
-
-Route::prefix('blog')->name('blog.')->group(function (): void {
-    Route::get('/', [PublicBlogController::class, 'index'])->name('index');
-    Route::get('/{slug}', [PublicBlogController::class, 'show'])->where('slug', '[0-9a-z-]+');
-});
-
-Route::prefix('faq')->name('faqs.')->group(function (): void {
-    Route::get('/', [PublicFaqController::class, 'index'])->name('index');
-});
-
-Route::prefix('pages')->name('pages.')->group(function (): void {
-    Route::get('/{slug}', [PublicPageController::class, 'show'])->where('slug', '[0-9a-z-]+');
-});
 
 // ── Authenticated + admin routes ──────────────────────────────────
 Route::middleware('auth')->group(function (): void {
@@ -141,6 +186,16 @@ Route::middleware('auth')->group(function (): void {
         Route::put('pages/{page}', [PageController::class, 'update'])->name('pages.update');
         Route::delete('pages/{page}', [PageController::class, 'destroy'])->name('pages.destroy');
 
+        // Push subscriptions (own subscription scoping is enforced in the controller)
+        Route::get('push-subscriptions', [PushSubscriptionController::class, 'index'])->name('push-subscriptions.index');
+        Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+        Route::delete('push-subscriptions/{subscription}', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+        Route::post('push-subscriptions/{subscription}/toggle', [PushSubscriptionController::class, 'toggleActive'])->name('push-subscriptions.toggle');
+
+        // Notification preferences (own preferences only, user_id server-forced)
+        Route::get('notification-preferences', [NotificationPreferencesController::class, 'index'])->name('notification-preferences.index');
+        Route::put('notification-preferences', [NotificationPreferencesController::class, 'update'])->name('notification-preferences.update');
+
         // Product brands
         Route::get('product-brands', [BrandController::class, 'productBrands'])->name('product-brands.index');
         Route::post('product-brands', [BrandController::class, 'storeProductBrand'])->name('product-brands.store');
@@ -152,5 +207,78 @@ Route::middleware('auth')->group(function (): void {
         Route::post('package-brands', [BrandController::class, 'storePackageBrand'])->name('package-brands.store');
         Route::put('package-brands/{package_brand}', [BrandController::class, 'updatePackageBrand'])->name('package-brands.update');
         Route::delete('package-brands/{package_brand}', [BrandController::class, 'destroyPackageBrand'])->name('package-brands.destroy');
+    });
+
+    // ── Lead management ───────────────────────────────────────────────
+    // `manage-leads` (not `admin`): lead_manager must reach these endpoints.
+    // Per-lead scoping is enforced by LeadPolicy.
+    Route::prefix('admin')->name('admin.')->middleware('can:manage-leads')->group(function (): void {
+        Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
+        Route::post('leads', [LeadController::class, 'store'])->name('leads.store');
+        Route::post('leads/convert', [LeadController::class, 'convert'])->name('leads.convert');
+        Route::get('leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
+        Route::put('leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
+        Route::delete('leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
+
+        Route::get('leads/{lead}/timeline', [LeadActivityController::class, 'index'])->name('leads.timeline.index');
+        Route::post('leads/{lead}/activities', [LeadActivityController::class, 'store'])->name('leads.activities.store');
+    });
+
+    // ── Analytics (read-only JSON, `view-analytics`) ──────────────────
+    // analyst reaches these; content_editor and lead_manager do not.
+    Route::prefix('admin')->name('admin.')->middleware('can:view-analytics')->group(function (): void {
+        Route::get('analytics/overview', [AnalyticsController::class, 'overview'])->name('analytics.overview');
+        Route::get('analytics/whatsapp-clicks', [AnalyticsController::class, 'whatsappClicks'])->name('analytics.whatsapp-clicks');
+        Route::get('analytics/leads', [AnalyticsController::class, 'leads'])->name('analytics.leads');
+    });
+
+    // ── Activity logs (`view-activity-logs`) ──────────────────────────
+    Route::prefix('admin')->name('admin.')->middleware('can:view-activity-logs')->group(function (): void {
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    });
+
+    // ── Settings (`manage-settings`) ──────────────────────────────────
+    Route::prefix('admin')->name('admin.')->middleware('can:manage-settings')->group(function (): void {
+        Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+    });
+
+    // ── Server-rendered admin UI (WP9) ────────────────────────────────
+    // Thin HTML controllers over the same services as the JSON APIs above.
+    // Existing JSON routes are untouched; the `-ui` suffix keeps both worlds
+    // addressable without a collision.
+
+    Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function (): void {
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    });
+
+    Route::prefix('admin/leads-ui')->name('admin.leads-ui.')->middleware('can:manage-leads')->group(function (): void {
+        Route::get('/', [LeadViewController::class, 'index'])->name('index');
+        Route::get('convert/{whatsappClick}', [LeadViewController::class, 'convertForm'])->name('convert.form');
+        Route::post('convert/{whatsappClick}', [LeadViewController::class, 'convert'])->name('convert.store');
+        Route::get('{lead}', [LeadViewController::class, 'show'])->name('show');
+        Route::patch('{lead}/status', [LeadViewController::class, 'updateStatus'])->name('status.update');
+        Route::post('{lead}/activities', [LeadViewController::class, 'storeNote'])->name('activities.store');
+        Route::patch('{lead}/assignee', [LeadViewController::class, 'assign'])->name('assignee.update');
+        Route::patch('{lead}/follow-up', [LeadViewController::class, 'scheduleFollowUp'])->name('follow-up.update');
+    });
+
+    Route::prefix('admin/analytics-ui')->name('admin.analytics-ui.')->middleware('can:view-analytics')->group(function (): void {
+        Route::get('/', [AnalyticsViewController::class, 'index'])->name('index');
+        Route::get('whatsapp-clicks', [AnalyticsViewController::class, 'whatsappClicks'])->name('whatsapp-clicks');
+    });
+
+    Route::prefix('admin')->name('admin.')->middleware('can:view-activity-logs')->group(function (): void {
+        Route::get('activity-logs-ui', [ActivityLogViewController::class, 'index'])->name('activity-logs-ui.index');
+    });
+
+    Route::prefix('admin/settings-ui')->name('admin.settings-ui.')->middleware('can:manage-settings')->group(function (): void {
+        Route::get('/', [SettingsViewController::class, 'edit'])->name('edit');
+        Route::put('/', [SettingsViewController::class, 'update'])->name('update');
+    });
+
+    Route::prefix('admin/push-settings')->name('admin.push-settings.')->middleware('can:admin')->group(function (): void {
+        Route::get('/', [PushSettingsViewController::class, 'index'])->name('index');
+        Route::put('/', [PushSettingsViewController::class, 'update'])->name('update');
     });
 });
