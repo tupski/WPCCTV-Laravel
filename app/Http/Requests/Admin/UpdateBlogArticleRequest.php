@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\BlogArticle;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\BlogArticle;
 
 class UpdateBlogArticleRequest extends FormRequest
 {
@@ -18,7 +18,6 @@ class UpdateBlogArticleRequest extends FormRequest
         $id = $this->route('article')->id ?? $this->route('blog_article')->id;
 
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
             'blog_category_id' => ['nullable', 'integer', Rule::exists('blog_categories', 'id')],
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique(BlogArticle::class, 'slug')->ignore($id)],

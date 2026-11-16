@@ -20,7 +20,9 @@ class BlogController extends Controller
 
     public function store(StoreBlogArticleRequest $request)
     {
-        $data = $request->safe()->except(['tag_ids']);
+        // Authorship is server-controlled: ignore any user_id from the payload.
+        $data = $request->safe()->except(['tag_ids', 'user_id']);
+        $data['user_id'] = auth()->id();
 
         $article = BlogArticle::create($data);
 
@@ -36,7 +38,8 @@ class BlogController extends Controller
 
     public function update(UpdateBlogArticleRequest $request, BlogArticle $article)
     {
-        $data = $request->safe()->except(['tag_ids']);
+        // Authorship never changes via update: ignore any user_id from the payload.
+        $data = $request->safe()->except(['tag_ids', 'user_id']);
 
         $article->update($data);
 

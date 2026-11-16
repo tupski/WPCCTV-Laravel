@@ -10,7 +10,7 @@ class MediaAssetController extends Controller
 {
     public function index()
     {
-        $assets = MediaAsset::latest()->paginate(25);
+        $assets = MediaAsset::with('creator')->latest()->paginate(25);
 
         return response()->json(['data' => $assets, 'meta' => $assets->toArray()['meta'] ?? null]);
     }

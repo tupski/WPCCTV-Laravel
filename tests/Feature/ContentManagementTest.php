@@ -3,20 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\BlogArticle;
-use App\Models\BlogCategory;
-use App\Models\BlogTag;
 use App\Models\Faq;
 use App\Models\MediaAsset;
-use App\Models\Page;
 use App\Models\Package;
-use App\Models\PackageBrand;
-use App\Models\PackageCategory;
-use App\Models\PackageUsageCategory;
+use App\Models\Page;
 use App\Models\Product;
 use App\Models\ProductBrand;
 use App\Models\Service;
-use App\Models\SeoMetadata;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -211,7 +206,6 @@ class ContentManagementTest extends TestCase
         $user = User::factory()->create(['role' => 'admin']);
 
         $response = $this->actingAs($user)->postJson('/admin/blog', [
-            'user_id' => $user->id,
             'title' => 'New Article',
             'body' => 'Article content',
             'status' => 'draft',
@@ -221,6 +215,51 @@ class ContentManagementTest extends TestCase
         $this->assertDatabaseHas('blog_articles', [
             'title' => 'New Article',
             'status' => 'draft',
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_blog_article_authorship_is_server_side(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $otherUser = User::factory()->create(['role' => 'admin']);
+
+        // Posting another user's id must be ignored: server forces auth()->id().
+        $response = $this->actingAs($user)->postJson('/admin/blog', [
+            'user_id' => $otherUser->id,
+            'title' => 'Forced Authorship',
+            'body' => 'Article content',
+            'status' => 'draft',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('blog_articles', [
+            'title' => 'Forced Authorship',
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseMissing('blog_articles', [
+            'title' => 'Forced Authorship',
+            'user_id' => $otherUser->id,
+        ]);
+    }
+
+    public function test_blog_article_update_ignores_user_id(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $otherUser = User::factory()->create(['role' => 'admin']);
+        $article = BlogArticle::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->putJson("/admin/blog/{$article->id}", [
+            'title' => 'Updated Title',
+            'body' => 'Updated body',
+            'status' => 'draft',
+            'user_id' => $otherUser->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('blog_articles', [
+            'id' => $article->id,
+            'title' => 'Updated Title',
             'user_id' => $user->id,
         ]);
     }
@@ -358,5 +397,21 @@ class ContentManagementTest extends TestCase
             'seoable_id' => $product->id,
             'seo_title' => 'SEO Title',
         ]);
+    }
+
+    // ── Media eager-loading ────────────────────────────────────────
+
+    public function test_media_index_eager_loads_creator(): void
+    {
+        Model::preventLazyLoading(true);
+
+        $user = User::factory()->create(['role' => 'admin']);
+        MediaAsset::factory()->count(3)->create();
+
+        $response = $this->actingAs($user)->getJson('/admin/media');
+
+        $response->assertOk();
+        // Response shape: { data: <paginator>, meta } — paginator nests rows under data.data.
+        $response->assertJsonCount(3, 'data.data');
     }
 }

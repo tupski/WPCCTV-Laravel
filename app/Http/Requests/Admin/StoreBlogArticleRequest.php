@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\BlogArticle;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\BlogArticle;
 
 class StoreBlogArticleRequest extends FormRequest
 {
@@ -16,7 +16,6 @@ class StoreBlogArticleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')],
             'blog_category_id' => ['nullable', 'integer', Rule::exists('blog_categories', 'id')],
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique(BlogArticle::class, 'slug')],

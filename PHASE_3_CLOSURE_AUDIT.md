@@ -197,3 +197,58 @@ AGENTS §17 / §19 items not yet verified:
 **Phase 4 must NOT begin until items 1–5 are closed.** Items 6–7 (M2, M3, L3, L4) are non-blocking for development but should be batched into the same remediation pass.
 
 The Phase 4 boundary is clean: no `Lead`, `Analytics`, `PushNotification`, `Vapid`, `WebPush`, or `WhatsApp` tracking classes exist in `app/`. No Preline references exist in `resources/`. No admin UI Blade components beyond placeholder views. `routes/web.php` contains no Phase 4 routes.
+
+---
+
+# 2026-11-13 — Modern Web Guidance Audit & Blocker Resolution
+
+## Blockers resolved (H1, H2, H3, M1)
+
+All four Phase 4 gating blockers from this audit's remediation list are resolved and independently verified 2026-11-13 against the working tree. Full evidence trail in [docs/MODERN_WEB_GUIDANCE_AUDIT.md](docs/MODERN_WEB_GUIDANCE_AUDIT.md).
+
+### H1 — `HasSlugs` race condition: RESOLVED
+
+- `app/Models/HasSlugs.php:46-57`: `save()` override catches `UniqueConstraintViolationException`; non-slug violations rethrown immediately (`:51-53`).
+- `app/Models/HasSlugs.php:64-89`: `retrySaveWithNewSlug()` retries with sequential `-2`..`-6` then random-suffix candidates; retry-budget exhaustion rethrows the original exception (`:88`).
+- `app/Models/HasSlugs.php:59-62`: `isSlugColumnViolation()` checks the exception message against the slug column; non-slug unique violations rethrow.
+- Public trait API unchanged: `bootHasSlugs()`, `getSlugSource()`, `generateUniqueSlug()` retain original signatures.
+- Tests: `SlugGenerationTest::duplicate_slug_violation_is_retried_not_500`, `SlugGenerationTest::two_concurrent_same_title_records_get_distinct_slugs` — both pass.
+
+### H2 — Canonical + centralized SEO head: RESOLVED
+
+- `config/seo.php:8`: `'canonical' => null` default added.
+- `resources/views/layouts/document.blade.php:4-24`: consumes `$seoData` with fallback chain (resolver output → per-page `yieldContent` → `config('seo.defaults')` → `url()->current()`); emits `<link rel="canonical">` (`:31`), og tags (`:32-38`), twitter tags including `twitter:card` (`:39-44`), robots (`:30`). No hardcoded duplication of defaults in the template.
+- All 6 public controllers construct and pass `$seoData` via `SeoMetadataResolver` (grep-verified). All 12 public views retain `@section('title')` / `@section('meta_description')` yields, consumed at `document.blade.php:8-11`.
+- Tests: `SeoHeadTest::show_page_renders_seo_record_values_in_head`, `SeoHeadTest::show_page_without_seo_record_uses_current_url_canonical` — both pass.
+
+### H3 — MediaAsset N+1: RESOLVED
+
+- `app/Http/Controllers/Admin/MediaAssetController.php:13`: `MediaAsset::with('creator')->latest()->paginate(25)`.
+- Test: `ContentManagementTest::test_media_index_eager_loads_creator` (with `Model::preventLazyLoading(true)`) — passes.
+
+### M1 — Blog authorship spoofing: RESOLVED
+
+- `app/Http/Requests/Admin/StoreBlogArticleRequest.php` and `app/Http/Requests/Admin/UpdateBlogArticleRequest.php`: no `user_id` rule in either ruleset.
+- `app/Http/Controllers/Admin/BlogController.php:24-25`: store strips `user_id` via `safe()->except()` and forces `$data['user_id'] = auth()->id()`.
+- `app/Http/Controllers/Admin/BlogController.php:42`: update strips `user_id` via `safe()->except()`.
+- Grep across `app/`: no other admin controller accepts `user_id` from input (only occurrences are `BlogArticle` model fillable/relation and `BlogController`).
+- Tests: `ContentManagementTest::test_blog_article_authorship_is_server_side`, `ContentManagementTest::test_blog_article_update_ignores_user_id` — both pass.
+
+## Remaining open items
+
+- **NEW-2 / M3 / NEW-1 / M2 (schema issues)**: OPEN. Live MariaDB migration never run; all schema claims remain SQLite-verified only. Unverifiable until `php artisan migrate` runs on target MariaDB 10.x/11.x.
+- **W5** (`resources/views/welcome.blade.php` leftover): OPEN, P3 cleanup.
+- **W6** (HTML sanitization for future admin-authored HTML): OPEN, deferred until public rendering of untrusted HTML exists; at that point a sanitizer becomes mandatory pre-render.
+
+## Suite result (re-run 2026-11-13)
+
+```
+Tests:    74 passed (230 assertions)
+Duration: 11.77s
+```
+
+`npm run build`: exit 0, built in 315ms (`public/build/assets/app-C43Kne6y.css` 61.76 kB, `public/build/assets/app-BNHQitJV.js` 137.62 kB).
+
+## Test integrity
+
+`tests/Feature/ContentManagementTest.php` reviewed in full (418 lines). Existing assertions retain original behaviors: authorization matrix (guest/403/admin), CRUD validation error assertions (`assertJsonValidationErrors` for `brand_id`, `camera_quantity`, `type`, `status`), boolean-coercion check, nullable-price check, database-has/missing assertions. No assertions weakened or removed; new tests were added alongside existing ones.
